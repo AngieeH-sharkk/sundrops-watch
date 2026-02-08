@@ -5,36 +5,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SUNRISE_OS v8.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #0a0a0a; margin: 0; overflow: hidden; }
+        .fnaf-cursor { cursor: crosshair; }
+        @keyframes sunflare { 0% { opacity: 0; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.5); } 100% { opacity: 0; transform: scale(2); } }
+        .sunburst-anim { animation: sunflare 0.8s ease-out forwards; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // Destructure Hooks from React
-        const { useState, useEffect, useRef } = React;
-        
-        // Import Icons from the Lucide Global Object
-        const { 
-            Battery, Signal, Wifi, LayoutDashboard, Camera, 
-            ScrollText, Bell, User, Zap, AlertTriangle, ChevronRight, 
-            Settings, Power, ShieldAlert, Sun, SunMedium, 
-            Star, Paintbrush, Trash2, Candy, Clock, Sparkles, Activity, Globe,
-            Monitor, Info, Smartphone, MoveHorizontal 
-        } = lucide;
+        const { useState, useEffect } = React;
+
+        // Helper to get icons safely from the window object
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const LucideIcon = window.lucide[name];
+            if (!LucideIcon) return null;
+            return <LucideIcon size={size} className={className} />;
+        };
 
         const App = () => {
             const [activeApp, setActiveApp] = useState('dashboard');
             const [battery, setBattery] = useState(100);
-            const [time, setTime] = useState("");
-            const [hour, setHour] = useState(new Date().getHours());
-            const [sunBurst, setSunBurst] = useState(false);
+            const [time, setTime] = useState(new Date().toLocaleTimeString());
             const [isPoweredOff, setIsPoweredOff] = useState(false);
-            
-            const [scanlines, setScanlines] = useState(true);
+            const [sunBurst, setSunBurst] = useState(false);
+
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            if (isPoweredOff) {
+                return (
+                    <div onClick={() => setIsPoweredOff(false)} className="h-screen w-full flex flex-col items-center justify-center bg-black cursor-pointer">
+                        <Icon name="Sun" size={100} className="text-yellow-900 animate-pulse" />
+                        <span className="text-yellow-950 font-mono text-xs mt-4 tracking-widest">SYSTEM STANDBY</span>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="h-screen w-full bg-neutral-950 text-amber-400 font-mono flex flex-col fnaf-cursor relative">
+                    {sunBurst && <div className="fixed inset-0 bg-yellow-400 sunburst-anim z-[100] pointer-events-none" />}
+                    
+                    <header className="h-14 border-b border-orange-900/40 bg-amber-950/20 flex items-center justify-between px-6">
+                        <div className="flex items-center gap-3">
+                            <Icon name="Sun" className="text-yellow-500 animate-spin" size={20} />
+                            <span className="font-black tracking-tighter">SUNRISE_OS v8.0</span>
+                        </div>
+                        <button onClick={() => { setSunBurst(true); setTimeout(() => setSunBurst(false), 800); }} 
+                                className="px-4 py-1 border border-yellow-500 rounded-full text-[10px] hover:bg-yellow-500/10 transition-colors">
+                            SUNBURST
+                        </button>
+                    </header>
+
+                    <div className="flex flex-1 overflow-hidden">
+                        <nav className="w-20 border-r border-orange-900/30 bg-black flex flex-col items-center py-6 gap-8">
+                            <button onClick={() => setActiveApp('dashboard')} className={`p-3 rounded-xl ${activeApp === 'dashboard' ? 'bg-amber-500/20 text-yellow-500' : 'text-neutral-700'}`}>
+                                <Icon name="LayoutDashboard" />
+                            </button>
+                            <button onClick={() => setActiveApp('cameras')} className={`p-3 rounded-xl ${activeApp === 'cameras' ? 'bg-amber-500/20 text-yellow-500' : 'text-neutral-700'}`}>
+                                <Icon name="Camera" />
+                            </button>
+                            <button onClick={() => setIsPoweredOff(true)} className="mt-auto p-3 text-neutral-800 hover:text-red-600">
+                                <Icon name="Power" />
+                            </button>
+                        </nav>
+
+                        <main className="flex-1 p-10 overflow-y-auto">
+                            {activeApp === 'dashboard' ? (
+                                <div className="max-w-4xl">
+                                    <h1 className="text-6xl font-black italic text-yellow-500 mb-8 uppercase">Hello New Friend!</h1>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="p-8 border-2 border-orange-900/20 rounded-[40px] bg-amber-950/5">
+                                            <p className="text-xs opacity-40 mb-2">SYSTEM TIME</p>
+                                            <p className="text-4xl font-black tabular-nums">{time}</p>
+                                        </div>
+                                        <div className="p-8 border-2 border-orange-900/20 rounded-[40px] bg-amber-950/5">
+                                            <Icon name="Zap" className="mb-2 text-yellow-500" />
+                                            <p className="text-4xl font-black">100%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-full flex flex-col">
+                                    <h2 className="text-2xl font-black text-yellow-500 mb-4">LIVE FEED: PLAYZONE_A</h2>
+                                    <div className="flex-1 bg-neutral-900 rounded-[40px] border-4 border-orange-900/20 relative overflow-hidden">
+                                        <div className="absolute top-6 left-6 flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
+                                            <span className="text-[10px] text-white/50">REC {time}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+
+                    <footer className="h-10 border-t border-orange-900/40 bg-amber-950/30 flex items-center px-6 justify-between text-[10px] font-bold">
+                        <span>STATUS: ALL FRIENDS ACCOUNTED FOR</span>
+                        <div className="flex items-center gap-2">
+                            <Icon name="Wifi" size={14} />
+                            <span>CONNECTED</span>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>            const [scanlines, setScanlines] = useState(true);
             const [haptics, setHaptics] = useState(true);
             const [brightness, setBrightness] = useState(100);
             const [isOnline, setIsOnline] = useState(navigator.onLine);
