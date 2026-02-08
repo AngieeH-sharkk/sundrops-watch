@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background-color: #0a0a0a; margin: 0; overflow: hidden; }
+        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100%; }
         .fnaf-cursor { cursor: crosshair; }
         @keyframes sunflare { 0% { opacity: 0; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.5); } 100% { opacity: 0; transform: scale(2); } }
         .sunburst-anim { animation: sunflare 0.8s ease-out forwards; }
@@ -22,19 +22,105 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Helper to get icons safely from the window object
         const Icon = ({ name, size = 24, className = "" }) => {
             const LucideIcon = window.lucide[name];
-            if (!LucideIcon) return null;
-            return <LucideIcon size={size} className={className} />;
+            return LucideIcon ? <LucideIcon size={size} className={className} /> : null;
         };
 
         const App = () => {
             const [activeApp, setActiveApp] = useState('dashboard');
-            const [battery, setBattery] = useState(100);
             const [time, setTime] = useState(new Date().toLocaleTimeString());
             const [isPoweredOff, setIsPoweredOff] = useState(false);
             const [sunBurst, setSunBurst] = useState(false);
+
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            if (isPoweredOff) {
+                return (
+                    <div onClick={() => setIsPoweredOff(false)} className="h-screen w-full flex flex-col items-center justify-center bg-black cursor-pointer">
+                        <Icon name="Sun" size={100} className="text-yellow-900 animate-pulse" />
+                        <span className="text-yellow-950 font-mono text-[10px] mt-4 tracking-[0.5em]">SYSTEM STANDBY</span>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="h-screen w-full bg-neutral-950 text-amber-400 font-mono flex flex-col fnaf-cursor relative border-4 border-orange-900/20">
+                    {sunBurst && <div className="fixed inset-0 bg-yellow-400 sunburst-anim z-[100] pointer-events-none" />}
+                    
+                    <header className="h-14 border-b border-orange-900/40 bg-amber-950/20 flex items-center justify-between px-6">
+                        <div className="flex items-center gap-3">
+                            <Icon name="Sun" className="text-yellow-500 animate-spin" size={20} />
+                            <span className="font-black tracking-tighter">SUNRISE_OS v8.0</span>
+                        </div>
+                        <button onClick={() => { setSunBurst(true); setTimeout(() => setSunBurst(false), 800); }} 
+                                className="px-4 py-1 border border-yellow-500 rounded-full text-[10px] font-bold hover:bg-yellow-500/20">
+                            SUNBURST
+                        </button>
+                    </header>
+
+                    <div className="flex flex-1 overflow-hidden">
+                        <nav className="w-20 border-r border-orange-900/30 bg-black flex flex-col items-center py-6 gap-8">
+                            {['LayoutDashboard', 'Camera', 'ShieldAlert', 'Settings'].map((iconName, idx) => (
+                                <button key={idx} onClick={() => setActiveApp(iconName.toLowerCase())} 
+                                        className={`p-3 rounded-xl transition-all ${activeApp === iconName.toLowerCase() ? 'bg-amber-500/20 text-yellow-500' : 'text-neutral-700'}`}>
+                                    <Icon name={iconName} />
+                                </button>
+                            ))}
+                            <button onClick={() => setIsPoweredOff(true)} className="mt-auto p-3 text-neutral-800 hover:text-red-600">
+                                <Icon name="Power" />
+                            </button>
+                        </nav>
+
+                        <main className="flex-1 p-10 overflow-y-auto bg-[radial-gradient(circle_at_center,rgba(69,26,3,0.2)_0%,rgba(0,0,0,1)_100%)]">
+                            {activeApp === 'dashboard' || activeApp === 'layoutdashboard' ? (
+                                <div>
+                                    <h1 className="text-6xl font-black italic text-yellow-500 mb-2 uppercase tracking-tighter">Hello New Friend!</h1>
+                                    <p className="text-amber-700 text-xs mb-10 tracking-widest uppercase">"Ready for finger painting?"</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="p-8 border-2 border-orange-900/20 rounded-[40px] bg-amber-950/5">
+                                            <p className="text-[10px] opacity-40 mb-2 font-bold uppercase">Uptime Clock</p>
+                                            <p className="text-4xl font-black tabular-nums tracking-tighter">{time}</p>
+                                        </div>
+                                        <div className="p-8 border-2 border-orange-900/20 rounded-[40px] bg-amber-950/5">
+                                            <p className="text-[10px] opacity-40 mb-2 font-bold uppercase">Battery</p>
+                                            <div className="flex items-center gap-4">
+                                                <p className="text-4xl font-black">100%</p>
+                                                <Icon name="Zap" className="text-yellow-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-orange-900/20 rounded-[40px]">
+                                    <Icon name="AlertTriangle" size={48} className="text-orange-900 mb-4" />
+                                    <p className="text-xs font-bold opacity-30 uppercase tracking-[0.3em]">Accessing Sector...</p>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+
+                    <footer className="h-10 border-t border-orange-900/40 bg-amber-950/30 flex items-center px-6 justify-between text-[10px] font-black">
+                        <span className="tracking-widest">RULE #1: KEEP THE LIGHTS ON!</span>
+                        <div className="flex items-center gap-2 text-yellow-500">
+                            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse" />
+                            <span>CONNECTED</span>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>            const [sunBurst, setSunBurst] = useState(false);
 
             useEffect(() => {
                 const timer = setInterval(() => {
