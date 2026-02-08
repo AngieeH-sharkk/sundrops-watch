@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNRISE_OS v8.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Destructure Hooks from React
+        const { useState, useEffect, useRef } = React;
+        
+        // Import Icons from the Lucide Global Object
+        const { 
+            Battery, Signal, Wifi, LayoutDashboard, Camera, 
+            ScrollText, Bell, User, Zap, AlertTriangle, ChevronRight, 
+            Settings, Power, ShieldAlert, Sun, SunMedium, 
+            Star, Paintbrush, Trash2, Candy, Clock, Sparkles, Activity, Globe,
+            Monitor, Info, Smartphone, MoveHorizontal 
+        } = lucide;
+
+        const App = () => {
+            const [activeApp, setActiveApp] = useState('dashboard');
+            const [battery, setBattery] = useState(100);
+            const [time, setTime] = useState("");
+            const [hour, setHour] = useState(new Date().getHours());
+            const [sunBurst, setSunBurst] = useState(false);
+            const [isPoweredOff, setIsPoweredOff] = useState(false);
+            
+            const [scanlines, setScanlines] = useState(true);
+            const [haptics, setHaptics] = useState(true);
+            const [brightness, setBrightness] = useState(100);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [systemInfo, setSystemInfo] = useState({ os: "Faz-OS", browser: "Faz-Scan" });
+
+            useEffect(() => {
+                const updateTime = () => {
+                    const now = new Date();
+                    setTime(now.toLocaleTimeString([], { 
+                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
+                    }));
+                    setHour(now.getHours());
+                };
+                updateTime();
+                const timer = setInterval(updateTime, 1000);
+
+                if ('getBattery' in navigator) {
+                    navigator.getBattery().then(batt => {
+                        setBattery(Math.round(batt.level * 100));
+                        batt.addEventListener('levelchange', () => setBattery(Math.round(batt.level * 100)));
+                    });
+                }
+
+                const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+                window.addEventListener('online', updateOnlineStatus);
+                window.addEventListener('offline', updateOnlineStatus);
+
+                const getHardwareInfo = () => {
+                    const ua = navigator.userAgent;
+                    let os = "Faz-Watch Standard";
+                    if (ua.indexOf("Win") !== -1) os = "Faz-Watch [Windows]";
+                    if (ua.indexOf("Mac") !== -1) os = "Faz-Watch [macOS]";
+                    setSystemInfo(prev => ({ ...prev, os }));
+                };
+                getHardwareInfo();
+
+                return () => {
+                    clearInterval(timer);
+                    window.removeEventListener('online', updateOnlineStatus);
+                    window.removeEventListener('offline', updateOnlineStatus);
+                };
+            }, []);
+
+            const triggerSunBurst = () => {
+                setSunBurst(true);
+                if (haptics && navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                setTimeout(() => setSunBurst(false), 800);
+            };
+
+            const handleAppChange = (id) => {
+                if (haptics && navigator.vibrate) navigator.vibrate(15);
+                setActiveApp(id);
+            };
+
+            const togglePower = () => {
+                if (haptics && navigator.vibrate) navigator.vibrate(50);
+                setIsPoweredOff(!isPoweredOff);
+            };
+
+            const globalStyles = `
+                .fnaf-cursor { cursor: crosshair; }
+                .fnaf-pointer { cursor: pointer; }
+                .custom-scroll::-webkit-scrollbar { width: 8px; }
+                .custom-scroll::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 10px; }
+                @keyframes sunflare { 0% { opacity: 0; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.5); } 100% { opacity: 0; transform: scale(2); } }
+                .sunburst-anim { animation: sunflare 0.8s ease-out forwards; }
+                .hide-scrollbar::-webkit-scrollbar { display: none; }
+                @keyframes slow-pulse { 0%, 100% { opacity: 0.3; transform: scale(0
+</html>
